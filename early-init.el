@@ -12,10 +12,11 @@
       backup-directory-alist '((".*" . "~/.emacs.d/.backups/"))
       package-user-dir (expand-file-name "packages" user-emacs-directory)
       url-history-file (expand-file-name "url/history" user-emacs-directory)
-      custom-file (expand-file-name "custom.el" user-emacs-directory))
+      custom-file (expand-file-name "custom.el" user-emacs-directory)
       auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
 
-(load custom-file :noerror)
+;; ;; Load custom-file
+;; (load custom-file :noerror)
 
 ;; Do not initialise the package manager (postpone this to init.el) - Required to use straight.
 (setq package-enable-at-startup nil)
@@ -33,10 +34,8 @@
   (setq native-comp-deferred-compilation t)
   ;; native-comp warning
   (setq comp-async-report-warnings-errors nil) 
-
   ;; Set the right directory to store the native compilation cache
-  (setq native-comp-eln-load-path (list (expand-file-name "eln-cache/" user-emacs-directory)))
-  )
+  (setq native-comp-eln-load-path (list (expand-file-name "eln-cache/" user-emacs-directory))))
 
 ;; Avoide byte compile warnings.
 (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
@@ -51,18 +50,28 @@
 ;; (set-fontset-font t nil (font-spec :size 16 :name "Noto Color Emoji"))
 
 (set-window-scroll-bars (minibuffer-window) nil nil)
-(set-default-coding-systems 'utf-8) ;; Set default coding system (especially for Windows)
+
+;; Coding system configurations (utf-8)
+(set-default-coding-systems 'utf-8) 
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(set-selection-coding-system 'utf-8)
+
+(when (fboundp 'set-charset-priority)
+  (set-charset-priority 'unicode))       ; pretty
+(prefer-coding-system 'utf-8)            ; pretty
+(setq locale-coding-system 'utf-8)       ; please
 
 (setq default-frame-alist
         '(
           (alpha 100 100)
           (cursor-type . 'vbar)
           (cursor-color . "#BE81F7")
-          (font . "Hack Nerd Font-16")
+          ;; (font . "Hack Nerd Font-16")
           (tool-bar-lines . 0)
           (menu-bar-lines . 0)
           (vertical-scroll-bars . right)
-          (ns-transparent-titlebar . t))
+          (ns-transparent-titlebar . t)))
 
 (setq initial-frame-alist default-frame-alist)
 

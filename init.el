@@ -63,5 +63,183 @@
 ;; Provides 'straight-x-clean-unused-repos' (part of 'straight.el')
 (use-package straight-x)
 
+;; Basic Configuration.
 (setq vc-follow-symlinks t
-      indent-tabs-mode nil)
+      indent-tabs-mode nil
+      lexical-binding t					; Permit the use of lexical bindings and scope.
+      ring-bell-function 'ignore 				; Stop the bell.
+      case-fold-search t					; Searches should ignore case.
+      kill-ring-max 1000
+      use-dialog-box nil                                     ; Nill means dialog boxes wont occur and mouse commands wont work.
+      make-backup-files t					; Make back up files (stored in location specified below).
+      vc-make-backup-files t					; Make back up files (stored in location specified below).
+      auto-save-default t					; Ensure files are auto saved.
+      auto-save-interval 50 					; Number of character entries before save.
+      auto-save-timeout 30					; Number of seconds of idle time before file is auto-saved.
+      delete-old-versions -1					; Disk space is cheap. save lots.
+      version-control t					;
+      create-lockfiles t					; Create lockfiles to avoid editing collissions.
+      sentence-end-double-space nil				; Sentenaces do not end in double spaces.
+      bidi-inhibit-bpa t  ; emacs 27 only - disables bidirectional parenthesis
+      indicate-empty-lines t ;; Show empty lines in left fringe.
+      highlight-nonselected-windows nil
+      fast-but-imprecise-scrolling t
+      inhibit-compacting-font-caches t
+      save-interprogram-paste-before-kill t
+      apropos-do-all t
+      mouse-yank-at-point t
+      indicate-buffer-boundaries 'left
+      window-resize-pixelwise nil ;; But do not resize windows pixelwise, this can cause crashes in some cases where we resize windows too quickly.
+      bookmark-default-file (concat emacs-directory "bookmarks")
+      ad-redefinition-action 'accept ; Disable warnings when using advised functionns
+      confirm-kill-emacs 'yes-or-no-p ; Confirm to kill emacs.
+      register-preview-delay 0.4)
+
+(setq-default bidi-display-reordering 'left-to-right
+              bidi-paragraph-direction 'left-to-right)
+
+(save-place-mode +1) ;; Save place in file
+(global-so-long-mode 1) ; Improve performance associated with files that have long lines.
+(winner-mode 1) ; Winner mode functionality to undo & redo window changes)
+(column-number-mode 1) ; Displays pointer column number.
+(delete-selection-mode 1) ; Delete highlighted text when typing (not poossible with evil-mode but will work once in insert mode and using default emacs bidings).
+(show-paren-mode 1) ; Highlightd corresponding parens when acitve.
+(defalias 'yes-or-no-p 'y-or-n-p) ; Shorten the =yes-or-no= prompts
+(setq-default cursor-in-non-selected-windows nil)
+
+;; LINES -----------
+(setq-default truncate-lines t)
+(setq-default tab-width 4)
+(setq-default fill-column 80)
+
+;; Show current key-sequence in minibuffer ala 'set showcmd' in vim. Any
+;; (setq echo-keystrokes 0.8)
+;; (setq blink-cursor-interval 0.6)
+;; Try really hard to keep the cursor from getting stuck in the read-only prompt
+;; portion of the minibuffer.
+(setq minibuffer-prompt-properties '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
+(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+;; Explicitly define a width to reduce the cost of on-the-fly computation
+(setq-default display-line-numbers-width 3)
+
+(setq backup-by-copying t   ; instead of renaming current file (clobbers links)
+      kept-old-versions 5
+      kept-new-versions 5)
+
+;; MISC OPTIMIZATIONS ----
+;; Emacs "updates" its ui more often than it needs to, so we slow it down
+;; slightly from 0.5s:
+;;; optimizations (froom Doom's core.el). See that file for descriptions.
+(setq idle-update-delay 1.0)
+
+;; (add-hook 'emacs-startup-hook
+;; 			(lambda ()
+;; 			  (message "*** Emacs loaded in %s seconds with %d garbage collections."
+;; 					   (emacs-init-time "%.2f")
+;; 					   gcs-done)))
+
+(if (window-system) ; Modifications to GUI if/when using gui system.
+  (progn
+    (set-frame-parameter (selected-frame) 'alpha '(100 . 100)) ; Set frame transparency and maximise windows by default.
+    (setq default-frame-alist ; Default Display.
+          '(
+            (alpha . (100 . 100))
+            (tool-bar-lines . 0)
+            (width . 106)
+            (height . 30)
+            (left . 50)
+            (top . 50)))
+    (menu-bar-mode -1)
+    (tool-bar-mode -1)
+    (set-fringe-mode 20)
+    (scroll-bar-mode -1)
+    ;; Improve scrolling.
+    (setq mouse-wheel-scroll-amount '(1 ((shift) . 1))) ;; one line at a time.
+    (setq mouse-wheel-progressive-speed nil) ;; don't accellerate scrolling.
+    (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse.
+    (setq scroll-step 1) ;; keyboard scroll one line at a time.
+    )
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (set-fringe-mode 20)
+  (scroll-bar-mode -1)
+  )
+
+;; Programming Defaults.
+(global-hl-line-mode +1)
+(blink-cursor-mode -1)
+(setq show-trailing-whitespace t)
+
+(add-hook 'prog-mode-hook (lambda () (toggle-truncate-lines +1)))
+(add-hook 'prog-mode-hook (lambda () (setq display-line-numbers 'relative)))
+
+(setq window-divider-default-places t
+      window-divider-default-bottom-width 1
+      window-divider-default-right-width 1)
+
+(window-divider-mode)
+
+(require 'uniquify)
+(setq uniquify-buffer-name-style 'forward)
+
+;; TODO - Not working, need to configure or map key (something exists in vertico.el)
+(defun my/minibuffer-backward-kill (arg)
+  "When minibuffer is completing a file name delete up to parent folder, otherwise delete a word"
+  (interactive "p")
+  (if minibuffer-completing-file-name
+    ;; Borrowed from https://github.com/raxod502/selectrum/issues/498#issuecomment-803283608
+    (if (string-match-p "/." (minibuffer-contents))
+      (zap-up-to-char (- arg) ?/)
+      (delete-minibuffer-contents))
+    (backward-kill-word arg)
+    )
+  )
+
+;; Easy goto line.
+(defun goto-line-with-feedback ()
+  "Show line numbers temporarily, while prompting for the line number input"
+  (interactive)
+  (unwind-protect
+    (progn
+      (linum-mode 1)
+      (goto-line (read-number "Goto line: ")))
+    (linum-mode -1)
+    )
+  )
+
+:bind (
+       ("M-g g" . goto-line-with-feedback) 		; Goto line functionality.
+       ("C-z" . nil)					; Disable Suspend Frame.
+       ("C-x C-z" . nil)				; Disable Suspend Frame.
+       ("C-h h" . nil)				; Disable the /hello-file/
+       ("M-`" . nil) ; Disable tmm menubar
+       )
+)
+
+(when (string= my/computer "laptop-wsl")
+  (use-package emacs
+               :config
+               ;; WSL - Copy
+               (defun wsl-copy (start end)
+                 (interactive "r")
+                 (shell-command-on-region start end "clip.exe")
+                 (deactivate-mark))
+
+               ;; WSL - Paste
+               (defun wsl-paste ()
+                 (interactive)
+                 (let ((clipboard
+                         (shell-command-to-string "powershell.exe -command 'Get-Clipboard' 2> /dev/null")))
+                   (setq clipboard (replace-regexp-in-string "\r" "" clipboard)) ; Remove Windows ^M characters.
+                   ;; (setq clipboard (substring clipboard 0 -1)) ; Remove new line added by powershell
+                   (insert clipboard)))
+
+               :bind
+               (
+                ("C-c C-c" . wsl-copy)
+                ("C-c C-v" . wsl-paste)
+                )
+               )
+  )
+
