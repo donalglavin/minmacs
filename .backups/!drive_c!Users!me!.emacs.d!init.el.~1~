@@ -23,7 +23,7 @@
           sys/work-windows t)))
 
 ;; Determine frame is in Terminal or GUI.
-;; TODO
+
 
 ;; Configure font for windows personal.
 (if sys/personal-windows
@@ -62,27 +62,6 @@
 
 ;; Provides 'straight-x-clean-unused-repos' (part of 'straight.el')
 (use-package straight-x)
-
-;;;; Manage native compile (if implemented)
-(if (boundp 'comp-deferred-compilation) ; Silence compiler warnings as they can be pretty disruptive
-    (setq comp-deferred-compilation nil)
-  (setq native-comp-deferred-compilation nil)
-  (setq warning-minimum-level ':error)
-  )
-
-;; In noninteractive sessions, prioritize non-byte-compiled source files to prevent the use of stale byte-code. Otherwise, it saves us a little IO time to skip the mtime checks on every *.elc file.
-(setq load-prefer-newer noninteractive)
-
-;;;; Configure customisation file
-(setq custom-file "~/.emacs.d/custom.el")
-(unless (file-exists-p custom-file)
-  (make-empty-file custom-file))
-
-;; Load the custom file (if it exists)
-(load custom-file)
-
-(setq gc-cons-threshold 402653184 ; Setting garbage collection threshold
-      gc-cons-percentage 0.6)
 
 ;; Basic Configuration.
 (setq vc-follow-symlinks t
@@ -229,33 +208,38 @@
     )
   )
 
-(global-set-key (kbd "M-g g") 'goto-line-with-feedback) 		; Goto line functionality.
-(global-set-key (kbd "C-z") 'nil)					; Disable Suspend Frame.
-(global-set-key (kbd "C-x C-z") 'nil)				; Disable Suspend Frame.
-(global-set-key (kbd "C-h h") 'nil)				; Disable the /hello-file/
-(global-set-key (kbd "M-`") nil) ; Disable tmm menubar
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; Use escape to escape.
-(global-set-key (kbd "C-M-u") 'universal-argument) ; Modify the emacs universal argument for to make "C-u" available.
+:bind (
+       ("M-g g" . goto-line-with-feedback) 		; Goto line functionality.
+       ("C-z" . nil)					; Disable Suspend Frame.
+       ("C-x C-z" . nil)				; Disable Suspend Frame.
+       ("C-h h" . nil)				; Disable the /hello-file/
+       ("M-`" . nil) ; Disable tmm menubar
+       )
+)
 
 (when (string= my/computer "laptop-wsl")
-  (progn
-    ;; WSL - Copy
-    (defun wsl-copy (start end)
-      (interactive "r")
-      (shell-command-on-region start end "clip.exe")
-      (deactivate-mark))
+  (use-package emacs
+               :config
+               ;; WSL - Copy
+               (defun wsl-copy (start end)
+                 (interactive "r")
+                 (shell-command-on-region start end "clip.exe")
+                 (deactivate-mark))
 
-    ;; WSL - Paste
-    (defun wsl-paste ()
-      (interactive)
-      (let ((clipboard
-              (shell-command-to-string "powershell.exe -command 'Get-Clipboard' 2> /dev/null")))
-        (setq clipboard (replace-regexp-in-string "\r" "" clipboard)) ; Remove Windows ^M characters.
-        ;; (setq clipboard (substring clipboard 0 -1)) ; Remove new line added by powershell
-        (insert clipboard)))
+               ;; WSL - Paste
+               (defun wsl-paste ()
+                 (interactive)
+                 (let ((clipboard
+                         (shell-command-to-string "powershell.exe -command 'Get-Clipboard' 2> /dev/null")))
+                   (setq clipboard (replace-regexp-in-string "\r" "" clipboard)) ; Remove Windows ^M characters.
+                   ;; (setq clipboard (substring clipboard 0 -1)) ; Remove new line added by powershell
+                   (insert clipboard)))
 
-    (global-set-key (kbd "C-c C-c" wsl-copy))
-    (global-set-key (kbd "C-c C-v" wsl-paste))
-    )
+               :bind
+               (
+                ("C-c C-c" . wsl-copy)
+                ("C-c C-v" . wsl-paste)
+                )
+               )
   )
 
